@@ -18,9 +18,15 @@
     },
     "android": {
       "package": "com.khizarnomansahir.whisperjournal",
-      "permissions": ["RECORD_AUDIO"]
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
-    "plugins": ["expo-router", "expo-av"],
+    "plugins": [
+      "expo-router",
+      "expo-av",
+      "expo-font"
+    ],
     "scheme": "whisperjournal",
     "experiments": {
       "typedRoutes": true
