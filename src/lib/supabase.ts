@@ -44,35 +44,48 @@ export async function saveEntry(params: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  let audio_url: string | null = null;
-
-  if (params.audioUri) {
-    const fileName = `${user.id}/${Date.now()}.m4a`;
-    const response = await fetch(params.audioUri);
-    const blob = await response.blob();
-    const { error: uploadError } = await supabase.storage
-      .from('audio-recordings')
-      .upload(fileName, blob, { contentType: 'audio/m4a' });
-    if (uploadError) throw uploadError;
-    const { data: urlData } = supabase.storage
-      .from('audio-recordings')
-      .getPublicUrl(fileName);
-    audio_url = urlData.publicUrl;
-  }
-
+  // Save text entry first — audio upload is optional
   const { data, error } = await supabase
     .from('journal_entries')
     .insert({
       user_id: user.id,
       title: params.title,
       transcript: params.transcript,
-      audio_url,
+      audio_url: null,
       mood: params.mood,
       duration_seconds: params.durationSeconds,
     })
     .select()
     .single();
-  if (error) throw error;
+
+  if (error) {
+    console.error('Supabase insert error:', JSON.stringify(error));
+    throw new Error(error.message);
+  }
+
+  // Try audio upload separately — won't block saving if it fails
+  if (params.audioUri && data) {
+    try {
+      const fileName = `${user.id}/${Date.now()}.m4a`;
+      const response = await fetch(params.audioUri);
+      const blob = await response.blob();
+      const { error: uploadError } = await supabase.storage
+        .from('audio-recordings')
+        .upload(fileName, blob, { contentType: 'audio/m4a' });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('audio-recordings')
+          .getPublicUrl(fileName);
+        await supabase
+          .from('journal_entries')
+          .update({ audio_url: urlData.publicUrl })
+          .eq('id', data.id);
+      }
+    } catch (audioErr) {
+      console.warn('Audio upload failed (non-critical):', audioErr);
+    }
+  }
+
   return data;
 }
 
