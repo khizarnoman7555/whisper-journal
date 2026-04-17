@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Whisper Journal",
-    "slug": "whisper-journal",
+    "name": "Whisssper",
+    "slug": "whisssper",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -10,24 +10,18 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.khizarnomansahir.whisperjournal",
+      "bundleIdentifier": "com.khizarnomansahir.whisssper",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Whisper Journal needs microphone access to record your voice entries.",
-        "NSSpeechRecognitionUsageDescription": "Whisper Journal uses speech recognition to transcribe your voice entries."
+        "NSMicrophoneUsageDescription": "Whisssper needs microphone access to record your voice entries.",
+        "NSSpeechRecognitionUsageDescription": "Whisssper uses speech recognition to transcribe your voice entries."
       }
     },
     "android": {
-      "package": "com.khizarnomansahir.whisperjournal",
-      "permissions": [
-        "RECORD_AUDIO"
-      ]
+      "package": "com.khizarnomansahir.whisssper",
+      "permissions": ["RECORD_AUDIO"]
     },
-    "plugins": [
-      "expo-router",
-      "expo-av",
-      "expo-font"
-    ],
-    "scheme": "whisperjournal",
+    "plugins": ["expo-router", "expo-av"],
+    "scheme": "whisssper",
     "experiments": {
       "typedRoutes": true
     }

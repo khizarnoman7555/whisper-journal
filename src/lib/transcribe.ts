@@ -6,12 +6,29 @@ export async function transcribeAudio(audioUri: string): Promise<string> {
     return '[Transcription not configured — check your .env file]';
   }
 
+  // Detect if we're on web or mobile
+  const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+  
+  let blob: Blob;
+  let fileName: string;
+  let mimeType: string;
+
+  if (isWeb) {
+    // On web, audioUri is already a blob URL
+    const response = await fetch(audioUri);
+    blob = await response.blob();
+    fileName = 'recording.webm';
+    mimeType = 'audio/webm';
+  } else {
+    // On mobile, read from file system
+    const response = await fetch(audioUri);
+    blob = await response.blob();
+    fileName = 'recording.m4a';
+    mimeType = 'audio/m4a';
+  }
+
   const formData = new FormData();
-  formData.append('file', {
-    uri: audioUri,
-    name: 'recording.m4a',
-    type: 'audio/m4a',
-  } as any);
+  formData.append('file', blob, fileName);
   formData.append('model', 'whisper-large-v3');
   formData.append('language', 'en');
   formData.append('response_format', 'text');

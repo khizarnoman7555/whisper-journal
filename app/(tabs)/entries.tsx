@@ -1,15 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  SafeAreaView, TextInput, Alert, ActivityIndicator, RefreshControl,
+  SafeAreaView, TextInput, Alert, ActivityIndicator,
+  RefreshControl, Platform,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { fetchEntries, deleteEntry, JournalEntry } from '../../src/lib/supabase';
 import { supabase } from '../../src/lib/supabase';
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
 }
 
 function formatDuration(secs: number) {
@@ -38,7 +40,7 @@ export default function EntriesScreen() {
     }
   }
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useEffect(() => { load(); }, []);
 
   function handleSearch(q: string) {
     setSearch(q);
@@ -50,13 +52,28 @@ export default function EntriesScreen() {
   }
 
   async function handleDelete(entry: JournalEntry) {
-    Alert.alert('Delete entry?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => { await deleteEntry(entry); load(); },
-      },
-    ]);
+    let confirmed = false;
+
+    if (Platform.OS === 'web') {
+      confirmed = window.confirm('Delete this entry? This cannot be undone.');
+    } else {
+      confirmed = await new Promise<boolean>((resolve) => {
+        Alert.alert('Delete entry?', 'This cannot be undone.', [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+        ]);
+      });
+    }
+
+    if (!confirmed) return;
+
+    try {
+      await deleteEntry(entry);
+      setEntries(prev => prev.filter(e => e.id !== entry.id));
+      setFiltered(prev => prev.filter(e => e.id !== entry.id));
+    } catch (err: any) {
+      Alert.alert('Delete failed', err.message);
+    }
   }
 
   async function handleSignOut() {
@@ -141,12 +158,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd5c8',
     borderRadius: 14, padding: 16, marginBottom: 12,
   },
-  cardMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  cardMeta: {
+    flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6,
+  },
   cardDate: { fontSize: 12, color: '#9b8e7e' },
   cardMood: { fontSize: 16 },
   cardTitle: { fontSize: 15, fontWeight: '500', color: '#1a1a2e', marginBottom: 4 },
   cardPreview: { fontSize: 13, color: '#9b8e7e', lineHeight: 20 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  cardFooter: {
+    flexDirection: 'row', justifyContent: 'space-between', marginTop: 8,
+  },
   cardDuration: { fontSize: 11, color: '#ddd5c8' },
   deleteText: { fontSize: 12, color: '#c42a2a' },
   empty: { textAlign: 'center', color: '#9b8e7e', marginTop: 60, fontSize: 14 },
